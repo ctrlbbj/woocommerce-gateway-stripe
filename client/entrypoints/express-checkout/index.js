@@ -42,19 +42,19 @@ import {
 	transformPrice,
 } from 'wcstripe/express-checkout/transformers/wc-to-stripe';
 
-jQuery( function ( $ ) {
+jQuery(function ($) {
 	// Don't load if blocks checkout is being loaded.
 	if (
-		getExpressCheckoutData( 'has_block' ) &&
-		! getExpressCheckoutData( 'is_pay_for_order' )
+		getExpressCheckoutData('has_block') &&
+		!getExpressCheckoutData('is_pay_for_order')
 	) {
 		return;
 	}
 
-	const publishableKey = getExpressCheckoutData( 'stripe' ).publishable_key;
+	const publishableKey = getExpressCheckoutData('stripe').publishable_key;
 	const quantityInputSelector = '.quantity .qty[type=number]';
 
-	if ( ! publishableKey ) {
+	if (!publishableKey) {
 		// If no configuration is present, probably this is not the checkout page.
 		return;
 	}
@@ -62,10 +62,10 @@ jQuery( function ( $ ) {
 	const api = new WCStripeAPI(
 		getStripeServerData(),
 		// A promise-based interface to jQuery.post.
-		( url, args ) => {
-			return new Promise( ( resolve, reject ) => {
-				jQuery.post( url, args ).then( resolve ).fail( reject );
-			} );
+		(url, args) => {
+			return new Promise((resolve, reject) => {
+				jQuery.post(url, args).then(resolve).fail(reject);
+			});
 		}
 	);
 
@@ -84,15 +84,15 @@ jQuery( function ( $ ) {
 	 * removed once booking product flows have been fully migrated to StoreAPI.
 	 */
 	const useLegacyCartEndpoints =
-		$( '.variations_form' ).length > 0 ||
-		$( '.wc-bookings-booking-form' ).length > 0;
+		$('.variations_form').length > 0 ||
+		$('.wc-bookings-booking-form').length > 0;
 
-	const resolveClickEvent = ( event, options ) => {
+	const resolveClickEvent = (event, options) => {
 		const getDefaultShippingRates = () => {
 			// Return a default shipping option when shipping is required but no rates are provided
 			const defaultShippingOption =
-				getExpressCheckoutData( 'checkout' )?.default_shipping_option;
-			return defaultShippingOption ? [ defaultShippingOption ] : [];
+				getExpressCheckoutData('checkout')?.default_shipping_option;
+			return defaultShippingOption ? [defaultShippingOption] : [];
 		};
 		const allowedShippingCountries = getExpressCheckoutData(
 			'allowed_shipping_countries'
@@ -100,31 +100,31 @@ jQuery( function ( $ ) {
 
 		const clickOptions = {
 			lineItems: useLegacyCartEndpoints
-				? normalizeLineItems( options.displayItems )
+				? normalizeLineItems(options.displayItems)
 				: options.displayItems,
 			emailRequired: true,
 			shippingAddressRequired: options.requestShipping,
 			phoneNumberRequired: options.requestPhone,
-			...( options.requestShipping && {
+			...(options.requestShipping && {
 				shippingRates:
 					options.shippingRates?.length > 0
 						? options.shippingRates
 						: getDefaultShippingRates(),
-			} ),
-			...( options.requestShipping &&
-				Array.isArray( allowedShippingCountries ) && {
-					allowedShippingCountries,
-				} ),
+			}),
+			...(options.requestShipping &&
+				Array.isArray(allowedShippingCountries) && {
+				allowedShippingCountries,
+			}),
 		};
 
-		return event.resolve( clickOptions );
+		return event.resolve(clickOptions);
 	};
 
 	// Check if the product is waiting for a variation to be selected.
 	const isVariationSelectionNeeded = () => {
 		// This check only makes sense on the product page.
-		const isProductPage = getExpressCheckoutData( 'is_product_page' );
-		if ( ! isProductPage ) {
+		const isProductPage = getExpressCheckoutData('is_product_page');
+		if (!isProductPage) {
 			return false;
 		}
 
@@ -135,17 +135,17 @@ jQuery( function ( $ ) {
 			'input[name="variation_id"]'
 		)?.value;
 		const variationSelected = variationId && variationId !== '0';
-		return isVariationProduct && ! variationSelected;
+		return isVariationProduct && !variationSelected;
 	};
 
 	const wcStripeECE = {
-		createButton: ( elements, options ) =>
-			elements.create( 'expressCheckout', options ),
+		createButton: (elements, options) =>
+			elements.create('expressCheckout', options),
 
-		getElements: () => $( '#wc-stripe-express-checkout-element' ),
+		getElements: () => $('#wc-stripe-express-checkout-element'),
 
 		getButtonSeparator: () =>
-			$( '#wc-stripe-express-checkout-button-separator' ),
+			$('#wc-stripe-express-checkout-button-separator'),
 
 		show: () => wcStripeECE.getElements().show(),
 
@@ -154,33 +154,33 @@ jQuery( function ( $ ) {
 			wcStripeECE.getButtonSeparator().hide();
 		},
 
-		renderButton: ( eceButton, expressPaymentType ) => {
-			if ( $( '#wc-stripe-express-checkout-element' ).length ) {
-				const containerName = `wc-stripe-express-checkout-element-${ expressPaymentType }`;
-				if ( ! $( `#${ containerName }` ).length ) {
-					$( '#wc-stripe-express-checkout-element' ).append(
-						`<div id="${ containerName }"></div>`
+		renderButton: (eceButton, expressPaymentType) => {
+			if ($('#wc-stripe-express-checkout-element').length) {
+				const containerName = `wc-stripe-express-checkout-element-${expressPaymentType}`;
+				if (!$(`#${containerName}`).length) {
+					$('#wc-stripe-express-checkout-element').append(
+						`<div id="${containerName}"></div>`
 					);
 				}
 
-				eceButton.mount( `#${ containerName }` );
+				eceButton.mount(`#${containerName}`);
 
 				// If the express payment type, e.g. Apple Pay, is not available,
 				// remove the container.
-				eceButton.on( 'ready', ( { availablePaymentMethods } ) => {
-					if ( ! availablePaymentMethods ) {
-						$( `#${ containerName }` ).remove();
+				eceButton.on('ready', ({ availablePaymentMethods }) => {
+					if (!availablePaymentMethods) {
+						$(`#${containerName}`).remove();
 					}
-				} );
+				});
 
-				eceButton.on( 'loaderror', () => {
-					$( `#${ containerName }` ).remove();
-				} );
+				eceButton.on('loaderror', () => {
+					$(`#${containerName}`).remove();
+				});
 			}
 		},
 
 		productHasDepositOption() {
-			return !! $( 'form' ).has(
+			return !!$('form').has(
 				'input[name=wc_deposit_option],input[name=wc_deposit_payment_plan]'
 			).length;
 		},
@@ -190,25 +190,25 @@ jQuery( function ( $ ) {
 		 *
 		 * @param {Object} options ECE options.
 		 */
-		startExpressCheckout: ( options ) => {
+		startExpressCheckout: (options) => {
 			const getShippingRates = () => {
-				if ( ! options.requestShipping ) {
+				if (!options.requestShipping) {
 					return [];
 				}
 
-				if ( getExpressCheckoutData( 'is_product_page' ) ) {
-					return getExpressCheckoutData( 'product' )?.shippingOptions;
+				if (getExpressCheckoutData('is_product_page')) {
+					return getExpressCheckoutData('product')?.shippingOptions;
 				}
 
 				return options.displayItems
-					.filter( ( i ) => i.key && i.key === 'total_shipping' )
-					.map( ( i ) => ( {
+					.filter((i) => i.key && i.key === 'total_shipping')
+					.map((i) => ({
 						id: 'rate-shipping',
 						amount: i.amount,
 						displayName: useLegacyCartEndpoints
 							? i.label ?? i.name
 							: i.name,
-					} ) );
+					}));
 			};
 
 			const shippingRates = getShippingRates();
@@ -231,24 +231,24 @@ jQuery( function ( $ ) {
 			// does not support paymentMethodCreation: 'manual'.
 			const expressPaymentTypes = [
 				isExpressCheckoutEnabled &&
-					EXPRESS_PAYMENT_METHOD_SETTING_APPLE_PAY,
+				EXPRESS_PAYMENT_METHOD_SETTING_APPLE_PAY,
 				isExpressCheckoutEnabled &&
-					EXPRESS_PAYMENT_METHOD_SETTING_GOOGLE_PAY,
+				EXPRESS_PAYMENT_METHOD_SETTING_GOOGLE_PAY,
 				isAmazonPayEnabled &&
-					! areTaxesBasedOnBillingAddress &&
-					EXPRESS_PAYMENT_METHOD_SETTING_AMAZON_PAY,
+				!areTaxesBasedOnBillingAddress &&
+				EXPRESS_PAYMENT_METHOD_SETTING_AMAZON_PAY,
 				isLinkEnabled && EXPRESS_PAYMENT_METHOD_SETTING_LINK,
-			].filter( Boolean );
+			].filter(Boolean);
 
-			expressPaymentTypes.forEach( ( expressPaymentType ) => {
-				wcStripeECE.createExpressCheckoutElement( expressPaymentType, {
+			expressPaymentTypes.forEach((expressPaymentType) => {
+				wcStripeECE.createExpressCheckoutElement(expressPaymentType, {
 					...options,
 					shippingRates,
-				} );
-			} );
+				});
+			});
 		},
 
-		createExpressCheckoutElement: ( expressPaymentType, options ) => {
+		createExpressCheckoutElement: (expressPaymentType, options) => {
 			const handleProductPageECEButtonClick = async (
 				event,
 				clickOptions
@@ -258,7 +258,7 @@ jQuery( function ( $ ) {
 				);
 
 				// First check if product can be added to cart.
-				if ( addToCartButton.classList.contains( 'disabled' ) ) {
+				if (addToCartButton.classList.contains('disabled')) {
 					const defaultMessage = __(
 						'Please select your product options before proceeding.',
 						'woocommerce-gateway-stripe'
@@ -280,13 +280,13 @@ jQuery( function ( $ ) {
 					}
 
 					// eslint-disable-next-line no-alert
-					window.alert( message || defaultMessage );
+					window.alert(message || defaultMessage);
 					return;
 				}
 
-				if ( wcStripeECEError ) {
+				if (wcStripeECEError) {
 					// eslint-disable-next-line no-alert
-					window.alert( wcStripeECEError );
+					window.alert(wcStripeECEError);
 					return;
 				}
 
@@ -295,18 +295,18 @@ jQuery( function ( $ ) {
 				// takes longer, we will call event.resolve() immediately,
 				// and wait for the addToCart operation to finish after.
 				const addToCartPromise = wcStripeECE.addToCart();
-				const timeout = new Promise( ( resolve ) =>
-					setTimeout( () => {
-						resolve( 'timeout' );
-					}, 700 )
+				const timeout = new Promise((resolve) =>
+					setTimeout(() => {
+						resolve('timeout');
+					}, 700)
 				);
-				const result = await Promise.race( [
+				const result = await Promise.race([
 					addToCartPromise,
 					timeout,
-				] );
-				if ( result === 'timeout' ) {
+				]);
+				if (result === 'timeout') {
 					// Immediately resolve the click event to avoid the 1s timeout.
-					resolveClickEvent( event, clickOptions );
+					resolveClickEvent(event, clickOptions);
 
 					// Wait for the addToCart operation to finish, checking
 					// that the product was successfully added to the cart.
@@ -326,7 +326,7 @@ jQuery( function ( $ ) {
 				}
 
 				wcStripeECE.isAddToCartSuccessful = true;
-				return resolveClickEvent( event, clickOptions );
+				return resolveClickEvent(event, clickOptions);
 			};
 
 			// This is a bit of a hack, but we need some way to get the shipping information before rendering the button, and
@@ -334,86 +334,90 @@ jQuery( function ( $ ) {
 			// Relying on what's provided in the cart response seems safest since it should always include a valid shipping
 			// rate if one is required and available.
 			// If no shipping rate is found we can't render the button so we just exit.
-			if ( options.requestShipping && ! options.shippingRates ) {
+			if (options.requestShipping && !options.shippingRates) {
 				return;
 			}
 
-			const hasFreeTrial = getExpressCheckoutData( 'has_free_trial' );
+			const hasFreeTrial = getExpressCheckoutData('has_free_trial');
 
-			const elements = api.getStripe().elements( {
+			const elements = api.getStripe().elements({
 				mode: hasFreeTrial ? 'subscription' : 'payment',
 				amount: options.total,
 				currency: options.currency,
-				...( isManualPaymentMethodCreation(
+				...(isManualPaymentMethodCreation(
 					expressPaymentType,
 					hasFreeTrial
 				) && {
 					paymentMethodCreation: 'manual',
-				} ),
+				}),
 				appearance: getExpressCheckoutButtonAppearance(),
-				locale: getExpressCheckoutData( 'stripe' )?.locale ?? 'en',
+				locale: getExpressCheckoutData('stripe')?.locale ?? 'en',
 				paymentMethodTypes:
-					getPaymentMethodTypesForExpressMethod( expressPaymentType ),
-			} );
+					getPaymentMethodTypesForExpressMethod(expressPaymentType),
+			});
 
-			const eceButton = wcStripeECE.createButton( elements, {
+			const eceButton = wcStripeECE.createButton(elements, {
 				...getExpressCheckoutButtonStyleSettings(),
 				paymentMethods: {
 					amazonPay:
 						expressPaymentType ===
-						EXPRESS_PAYMENT_METHOD_SETTING_AMAZON_PAY
+							EXPRESS_PAYMENT_METHOD_SETTING_AMAZON_PAY
 							? 'auto'
 							: 'never',
 					googlePay:
 						expressPaymentType ===
-						EXPRESS_PAYMENT_METHOD_SETTING_GOOGLE_PAY
+							EXPRESS_PAYMENT_METHOD_SETTING_GOOGLE_PAY
 							? 'always'
 							: 'never',
 					applePay:
 						expressPaymentType ===
-						EXPRESS_PAYMENT_METHOD_SETTING_APPLE_PAY
+							EXPRESS_PAYMENT_METHOD_SETTING_APPLE_PAY
 							? 'always'
 							: 'never',
 					link: expressPaymentType === 'link' ? 'auto' : 'never',
 				},
-			} );
+			});
 
-			wcStripeECE.renderButton( eceButton, expressPaymentType );
+			wcStripeECE.renderButton(eceButton, expressPaymentType);
 
-			eceButton.on( 'click', async function ( event ) {
+			eceButton.on('click', async function (event) {
+				const clickData = { type: 'express', method: event.expressPaymentType };
+				console.log('Stripe Express Button Clicked:', clickData);
+				jQuery(document.body).trigger('wc_stripe_payment_button_click', clickData);
+
 				// If login is required for checkout, display redirect confirmation dialog.
-				if ( getExpressCheckoutData( 'login_confirmation' ) ) {
-					displayLoginConfirmation( event.expressPaymentType );
+				if (getExpressCheckoutData('login_confirmation')) {
+					displayLoginConfirmation(event.expressPaymentType);
 					return;
 				}
 
-				if ( getExpressCheckoutData( 'taxes_based_on_billing' ) ) {
+				if (getExpressCheckoutData('taxes_based_on_billing')) {
 					displayExpressCheckoutNotice(
 						__(
 							'Final taxes charged can differ based on your actual billing address when using Express Checkout buttons (Link, Google Pay or Apple Pay).',
 							'woocommerce-gateway-stripe'
 						),
 						'info',
-						[ 'ece-taxes-info' ]
+						['ece-taxes-info']
 					);
 				}
 
-				if ( ! getExpressCheckoutData( 'is_product_page' ) ) {
-					onClickHandler( event );
-					return resolveClickEvent( event, options );
+				if (!getExpressCheckoutData('is_product_page')) {
+					onClickHandler(event);
+					return resolveClickEvent(event, options);
 				}
 
-				return await handleProductPageECEButtonClick( event, options );
-			} );
+				return await handleProductPageECEButtonClick(event, options);
+			});
 
 			const handleProductPageShippingAddressChange = async (
 				event,
 				stripeElements
 			) => {
-				if ( wcStripeECE.isAddToCartSuccessful === false ) {
+				if (wcStripeECE.isAddToCartSuccessful === false) {
 					// wait 1s for the item to be added to the cart before proceeding
-					await new Promise( ( resolve ) =>
-						setTimeout( resolve, 1000 )
+					await new Promise((resolve) =>
+						setTimeout(resolve, 1000)
 					);
 				}
 
@@ -424,8 +428,8 @@ jQuery( function ( $ ) {
 				);
 			};
 
-			eceButton.on( 'shippingaddresschange', async ( event ) => {
-				if ( getExpressCheckoutData( 'is_product_page' ) ) {
+			eceButton.on('shippingaddresschange', async (event) => {
+				if (getExpressCheckoutData('is_product_page')) {
 					return await handleProductPageShippingAddressChange(
 						event,
 						elements
@@ -436,36 +440,36 @@ jQuery( function ( $ ) {
 					event,
 					elements
 				);
-			} );
+			});
 
 			eceButton.on(
 				'shippingratechange',
-				async ( event ) =>
-					await shippingRateChangeHandler( api, event, elements )
+				async (event) =>
+					await shippingRateChangeHandler(api, event, elements)
 			);
 
-			eceButton.on( 'confirm', async ( event ) => {
+			eceButton.on('confirm', async (event) => {
 				if (
-					getExpressCheckoutData( 'is_product_page' ) &&
+					getExpressCheckoutData('is_product_page') &&
 					wcStripeECE.isAddToCartSuccessful === false
 				) {
 					// wait 1s for the item to be added to the cart before proceeding
-					await new Promise( ( resolve ) =>
-						setTimeout( resolve, 1000 )
+					await new Promise((resolve) =>
+						setTimeout(resolve, 1000)
 					);
 
-					if ( wcStripeECE.isAddToCartSuccessful === false ) {
+					if (wcStripeECE.isAddToCartSuccessful === false) {
 						const message = __(
 							'There was an error adding the product to the cart.',
 							'woocommerce-gateway-stripe'
 						);
-						return wcStripeECE.abortPayment( event, message );
+						return wcStripeECE.abortPayment(event, message);
 					}
 				}
 
 				const order = options.order ? options.order : 0;
 				const orderDetails = options.orderDetails ?? {};
-				return await onConfirmHandler( {
+				return await onConfirmHandler({
 					api,
 					stripe: api.getStripe(),
 					elements,
@@ -475,29 +479,29 @@ jQuery( function ( $ ) {
 					order,
 					orderDetails,
 					hasFreeTrial,
-				} );
-			} );
+				});
+			});
 
-			eceButton.on( 'cancel', () => {
+			eceButton.on('cancel', () => {
 				wcStripeECE.paymentAborted = true;
 				onCancelHandler();
-			} );
+			});
 
-			eceButton.on( 'ready', ( onReadyParams ) => {
+			eceButton.on('ready', (onReadyParams) => {
 				if (
-					! isVariationSelectionNeeded() &&
+					!isVariationSelectionNeeded() &&
 					onReadyParams.availablePaymentMethods &&
 					Object.values(
 						onReadyParams.availablePaymentMethods
-					).filter( Boolean ).length
+					).filter(Boolean).length
 				) {
 					wcStripeECE.show();
 					wcStripeECE.getButtonSeparator().show();
 				}
-			} );
+			});
 
-			if ( getExpressCheckoutData( 'is_product_page' ) ) {
-				wcStripeECE.attachProductPageEventListeners( elements );
+			if (getExpressCheckoutData('is_product_page')) {
+				wcStripeECE.attachProductPageEventListeners(elements);
 			}
 		},
 
@@ -505,7 +509,7 @@ jQuery( function ( $ ) {
 		 * Initialize event handlers and UI state
 		 */
 		init: () => {
-			if ( getExpressCheckoutData( 'is_pay_for_order' ) ) {
+			if (getExpressCheckoutData('is_pay_for_order')) {
 				if (
 					typeof wcStripeExpressCheckoutPayForOrderParams ===
 					'undefined'
@@ -524,74 +528,74 @@ jQuery( function ( $ ) {
 				// Blocks API Pay for Order endpoint, which ECE uses.
 				// These fields are both present when the user is logged in.
 				if (
-					! orderDetails?.orderKey ||
-					! orderDetails?.billingEmail
+					!orderDetails?.orderKey ||
+					!orderDetails?.billingEmail
 				) {
 					return;
 				}
 
-				wcStripeECE.startExpressCheckout( {
+				wcStripeECE.startExpressCheckout({
 					total,
 					currency:
-						getExpressCheckoutData( 'checkout' ).currency_code,
+						getExpressCheckoutData('checkout').currency_code,
 					appearance: getExpressCheckoutButtonAppearance(),
-					locale: getExpressCheckoutData( 'stripe' )?.locale ?? 'en',
+					locale: getExpressCheckoutData('stripe')?.locale ?? 'en',
 					displayItems: transformLabeledDisplayItems(
 						displayItems ?? []
 					),
 					order,
 					orderDetails,
-				} );
-			} else if ( getExpressCheckoutData( 'is_product_page' ) ) {
+				});
+			} else if (getExpressCheckoutData('is_product_page')) {
 				const isProductSupported =
-					getExpressCheckoutData( 'product' )
+					getExpressCheckoutData('product')
 						?.validVariationSelected ?? true;
-				if ( isProductSupported ) {
+				if (isProductSupported) {
 					const displayItems =
-						getExpressCheckoutData( 'product' ).displayItems ?? [];
-					wcStripeECE.startExpressCheckout( {
-						total: getExpressCheckoutData( 'product' )?.total
+						getExpressCheckoutData('product').displayItems ?? [];
+					wcStripeECE.startExpressCheckout({
+						total: getExpressCheckoutData('product')?.total
 							.amount,
-						currency: getExpressCheckoutData( 'product' )?.currency,
+						currency: getExpressCheckoutData('product')?.currency,
 						requestShipping:
-							getExpressCheckoutData( 'product' )
+							getExpressCheckoutData('product')
 								?.requestShipping ?? false,
 						requestPhone:
-							getExpressCheckoutData( 'checkout' )
+							getExpressCheckoutData('checkout')
 								?.needs_payer_phone ?? false,
 						displayItems: useLegacyCartEndpoints
 							? displayItems
-							: transformLabeledDisplayItems( displayItems ),
-					} );
+							: transformLabeledDisplayItems(displayItems),
+					});
 				}
 			} else {
 				// Cart and Checkout page specific initialization.
-				api.expressCheckoutGetCartDetails().then( ( cart ) => {
+				api.expressCheckoutGetCartDetails().then((cart) => {
 					const total = transformPrice(
-						parseInt( cart.totals.total_price, 10 ) -
-							parseInt( cart.totals.total_refund || 0, 10 ),
+						parseInt(cart.totals.total_price, 10) -
+						parseInt(cart.totals.total_refund || 0, 10),
 						cart.totals
 					);
 
 					if (
 						total === 0 &&
-						! getExpressCheckoutData( 'has_free_trial' )
+						!getExpressCheckoutData('has_free_trial')
 					) {
 						wcStripeECE.hide();
 						return;
 					}
 
-					wcStripeECE.startExpressCheckout( {
+					wcStripeECE.startExpressCheckout({
 						total,
 						currency:
-							getExpressCheckoutData( 'checkout' )?.currency_code,
+							getExpressCheckoutData('checkout')?.currency_code,
 						requestShipping: cart.needs_shipping === true,
 						requestPhone:
-							getExpressCheckoutData( 'checkout' )
+							getExpressCheckoutData('checkout')
 								?.needs_payer_phone,
-						displayItems: transformCartDataForDisplayItems( cart ),
-					} );
-				} );
+						displayItems: transformCartDataForDisplayItems(cart),
+					});
+				});
 			}
 
 			// After initializing a new express checkout button, we need to reset the paymentAborted flag.
@@ -599,24 +603,24 @@ jQuery( function ( $ ) {
 		},
 
 		getAttributes: () => {
-			const select = $( '.variations_form' ).find( '.variations select' );
+			const select = $('.variations_form').find('.variations select');
 			const data = {};
 			let count = 0;
 			let chosen = 0;
 
-			select.each( function () {
+			select.each(function () {
 				const attributeName =
-					$( this ).data( 'attribute_name' ) ||
-					$( this ).attr( 'name' );
-				const value = $( this ).val() || '';
+					$(this).data('attribute_name') ||
+					$(this).attr('name');
+				const value = $(this).val() || '';
 
-				if ( value.length > 0 ) {
+				if (value.length > 0) {
 					chosen++;
 				}
 
 				count++;
-				data[ attributeName ] = value;
-			} );
+				data[attributeName] = value;
+			});
 
 			return {
 				count,
@@ -626,35 +630,35 @@ jQuery( function ( $ ) {
 		},
 
 		getSelectedProductData: () => {
-			let productId = $( '.single_add_to_cart_button' ).val();
+			let productId = $('.single_add_to_cart_button').val();
 
 			// Check if product is a variable product.
-			if ( $( '.single_variation_wrap' ).length ) {
-				productId = $( '.single_variation_wrap' )
-					.find( 'input[name="product_id"]' )
+			if ($('.single_variation_wrap').length) {
+				productId = $('.single_variation_wrap')
+					.find('input[name="product_id"]')
 					.val();
 			}
 
 			// WC Bookings Support.
-			if ( $( '.wc-bookings-booking-form' ).length ) {
-				productId = $( '.wc-booking-product-id' ).val();
+			if ($('.wc-bookings-booking-form').length) {
+				productId = $('.wc-booking-product-id').val();
 			}
 
 			const addons =
-				$( '#product-addons-total' ).data( 'price_data' ) || [];
+				$('#product-addons-total').data('price_data') || [];
 			const addonValue = addons.reduce(
-				( sum, addon ) => sum + addon.cost,
+				(sum, addon) => sum + addon.cost,
 				0
 			);
 
 			// WC Deposits Support.
 			const depositObject = {};
-			if ( $( 'input[name=wc_deposit_option]' ).length ) {
+			if ($('input[name=wc_deposit_option]').length) {
 				depositObject.wc_deposit_option = $(
 					'input[name=wc_deposit_option]:checked'
 				).val();
 			}
-			if ( $( 'input[name=wc_deposit_payment_plan]' ).length ) {
+			if ($('input[name=wc_deposit_payment_plan]').length) {
 				depositObject.wc_deposit_payment_plan = $(
 					'input[name=wc_deposit_payment_plan]:checked'
 				).val();
@@ -662,15 +666,15 @@ jQuery( function ( $ ) {
 
 			const data = {
 				product_id: productId,
-				qty: $( quantityInputSelector ).val(),
-				attributes: $( '.variations_form' ).length
+				qty: $(quantityInputSelector).val(),
+				attributes: $('.variations_form').length
 					? wcStripeECE.getAttributes().data
 					: [],
 				addon_value: addonValue,
 				...depositObject,
 			};
 
-			return api.expressCheckoutGetSelectedProductData( data );
+			return api.expressCheckoutGetSelectedProductData(data);
 		},
 
 		/**
@@ -679,53 +683,53 @@ jQuery( function ( $ ) {
 		 * @return {Promise} Promise for the request to the server.
 		 */
 		addToCart: async () => {
-			let productId = $( '.single_add_to_cart_button' ).val();
+			let productId = $('.single_add_to_cart_button').val();
 			let emptyCartParams = {};
 
 			const data = {
-				qty: $( quantityInputSelector ).val(),
+				qty: $(quantityInputSelector).val(),
 			};
 
 			// Check if product is a variable product.
-			if ( $( '.single_variation_wrap' ).length ) {
-				productId = $( '.single_variation_wrap' )
-					.find( 'input[name="product_id"]' )
+			if ($('.single_variation_wrap').length) {
+				productId = $('.single_variation_wrap')
+					.find('input[name="product_id"]')
 					.val();
 			}
 
-			if ( $( '.wc-bookings-booking-form' ).length ) {
-				productId = $( '.wc-booking-product-id' ).val();
+			if ($('.wc-bookings-booking-form').length) {
+				productId = $('.wc-booking-product-id').val();
 				emptyCartParams = {
 					bookingId: productId,
 				};
 			}
 
 			// Add extension data to the POST body
-			const formData = $( 'form.cart' ).serializeArray();
-			$.each( formData, ( i, field ) => {
-				if ( /^(addon-|wc_)/.test( field.name ) ) {
-					if ( /\[\]$/.test( field.name ) ) {
+			const formData = $('form.cart').serializeArray();
+			$.each(formData, (i, field) => {
+				if (/^(addon-|wc_)/.test(field.name)) {
+					if (/\[\]$/.test(field.name)) {
 						const fieldName = field.name.substring(
 							0,
 							field.name.length - 2
 						);
-						if ( data[ fieldName ] ) {
-							data[ fieldName ].push( field.value );
+						if (data[fieldName]) {
+							data[fieldName].push(field.value);
 						} else {
-							data[ fieldName ] = [ field.value ];
+							data[fieldName] = [field.value];
 						}
 					} else {
-						data[ field.name ] = field.value;
+						data[field.name] = field.value;
 					}
 				}
-			} );
+			});
 
 			// Legacy support for variations.
-			if ( useLegacyCartEndpoints ) {
+			if (useLegacyCartEndpoints) {
 				data.product_id = productId;
 				data.attributes = wcStripeECE.getAttributes().data;
 
-				return api.expressCheckoutAddToCartLegacy( data );
+				return api.expressCheckoutAddToCartLegacy(data);
 			}
 
 			// BlocksAPI partial support (lacking support for variations).
@@ -736,9 +740,9 @@ jQuery( function ( $ ) {
 			//  do not interfere with computed totals.
 			// Use the non-StoreAPI method as it is faster; Stripe requires
 			// the click event to be resolved within 1 second.
-			await api.expressCheckoutEmptyCartLegacy( emptyCartParams );
+			await api.expressCheckoutEmptyCartLegacy(emptyCartParams);
 
-			return api.expressCheckoutAddToCart( data );
+			return api.expressCheckoutAddToCart(data);
 		},
 
 		/**
@@ -746,8 +750,8 @@ jQuery( function ( $ ) {
 		 *
 		 * @param {string} url Order thank you page URL.
 		 */
-		completePayment: ( url ) => {
-			onCompletePaymentHandler( url );
+		completePayment: (url) => {
+			onCompletePaymentHandler(url);
 			window.location = url;
 		},
 
@@ -758,44 +762,44 @@ jQuery( function ( $ ) {
 		 * @param {string}          message      Error message to display.
 		 * @param {boolean}         isOrderError Whether the error is related to the order creation.
 		 */
-		abortPayment: ( payment, message, isOrderError = false ) => {
-			if ( ! isOrderError ) {
-				payment.paymentFailed( { reason: 'fail' } );
+		abortPayment: (payment, message, isOrderError = false) => {
+			if (!isOrderError) {
+				payment.paymentFailed({ reason: 'fail' });
 			}
-			onAbortPaymentHandler( payment, message );
+			onAbortPaymentHandler(payment, message);
 
-			displayExpressCheckoutNotice( message, 'error' );
+			displayExpressCheckoutNotice(message, 'error');
 		},
 
-		attachProductPageEventListeners: ( elements ) => {
+		attachProductPageEventListeners: (elements) => {
 			// WooCommerce Deposits support.
 			// Trigger the "woocommerce_variation_has_changed" event when the deposit option is changed.
 			// Needs to be defined before the `woocommerce_variation_has_changed` event handler is set.
 			$(
 				'input[name=wc_deposit_option],input[name=wc_deposit_payment_plan]'
 			)
-				.off( 'change' )
-				.on( 'change', () => {
-					$( 'form' )
+				.off('change')
+				.on('change', () => {
+					$('form')
 						.has(
 							'input[name=wc_deposit_option],input[name=wc_deposit_payment_plan]'
 						)
-						.trigger( 'woocommerce_variation_has_changed' );
-				} );
+						.trigger('woocommerce_variation_has_changed');
+				});
 
-			$( document.body )
-				.off( 'woocommerce_variation_has_changed' )
-				.on( 'woocommerce_variation_has_changed', () => {
-					if ( isVariationSelectionNeeded() ) {
+			$(document.body)
+				.off('woocommerce_variation_has_changed')
+				.on('woocommerce_variation_has_changed', () => {
+					if (isVariationSelectionNeeded()) {
 						wcStripeECE.hide();
 						return;
 					}
 
 					wcStripeECE.blockExpressCheckoutButton();
 
-					$.when( wcStripeECE.getSelectedProductData() )
-						.then( ( response ) => {
-							if ( response.error ) {
+					$.when(wcStripeECE.getSelectedProductData())
+						.then((response) => {
+							if (response.error) {
 								wcStripeECE.hide();
 							} else {
 								const isDeposits =
@@ -808,15 +812,15 @@ jQuery( function ( $ ) {
 								 * we can simply update the express checkout button with the new total and display items.
 								 */
 								const needsShipping =
-									! wcStripeECE.paymentAborted &&
-									getExpressCheckoutData( 'product' )
+									!wcStripeECE.paymentAborted &&
+									getExpressCheckoutData('product')
 										.requestShipping ===
-										response.requestShipping;
+									response.requestShipping;
 
-								if ( ! isDeposits && needsShipping ) {
-									elements.update( {
+								if (!isDeposits && needsShipping) {
+									elements.update({
 										amount: response.total.amount,
-									} );
+									});
 								} else {
 									wcStripeECE.reInitExpressCheckoutElement(
 										response
@@ -825,57 +829,57 @@ jQuery( function ( $ ) {
 
 								wcStripeECE.show();
 							}
-						} )
-						.catch( () => {
+						})
+						.catch(() => {
 							wcStripeECE.hide();
-						} )
-						.always( () => {
+						})
+						.always(() => {
 							wcStripeECE.unblockExpressCheckoutButton();
-						} );
-				} );
+						});
+				});
 
-			$( document.body )
-				.off( 'woocommerce_update_variation_values' )
-				.on( 'woocommerce_update_variation_values', () => {
-					if ( isVariationSelectionNeeded() ) {
+			$(document.body)
+				.off('woocommerce_update_variation_values')
+				.on('woocommerce_update_variation_values', () => {
+					if (isVariationSelectionNeeded()) {
 						wcStripeECE.hide();
 					}
-				} );
+				});
 
-			$( '.quantity' )
-				.off( 'input', '.qty' )
+			$('.quantity')
+				.off('input', '.qty')
 				.on(
 					'input',
 					'.qty',
-					debounce( () => {
+					debounce(() => {
 						wcStripeECE.blockExpressCheckoutButton();
 						wcStripeECEError = '';
 
-						$.when( wcStripeECE.getSelectedProductData() )
+						$.when(wcStripeECE.getSelectedProductData())
 							.then(
-								( response ) => {
+								(response) => {
 									// In case the server returns an unexpected response
-									if ( typeof response !== 'object' ) {
+									if (typeof response !== 'object') {
 										wcStripeECEError = defaultErrorMessage;
 									}
 
 									if (
-										! wcStripeECE.paymentAborted &&
-										getExpressCheckoutData( 'product' )
+										!wcStripeECE.paymentAborted &&
+										getExpressCheckoutData('product')
 											.requestShipping ===
-											response.requestShipping
+										response.requestShipping
 									) {
-										elements.update( {
+										elements.update({
 											amount: response.total.amount,
-										} );
+										});
 									} else {
 										wcStripeECE.reInitExpressCheckoutElement(
 											response
 										);
 									}
 								},
-								( response ) => {
-									if ( response.responseJSON ) {
+								(response) => {
+									if (response.responseJSON) {
 										wcStripeECEError =
 											response.responseJSON.error;
 									} else {
@@ -883,18 +887,18 @@ jQuery( function ( $ ) {
 									}
 								}
 							)
-							.always( function () {
+							.always(function () {
 								wcStripeECE.unblockExpressCheckoutButton();
-							} );
-					}, 250 )
+							});
+					}, 250)
 				);
 		},
 
-		reInitExpressCheckoutElement: ( response ) => {
-			getExpressCheckoutData( 'product' ).requestShipping =
+		reInitExpressCheckoutElement: (response) => {
+			getExpressCheckoutData('product').requestShipping =
 				response.requestShipping;
-			getExpressCheckoutData( 'product' ).total = response.total;
-			getExpressCheckoutData( 'product' ).displayItems =
+			getExpressCheckoutData('product').total = response.total;
+			getExpressCheckoutData('product').displayItems =
 				response.displayItems;
 			wcStripeECE.init();
 		},
@@ -903,39 +907,39 @@ jQuery( function ( $ ) {
 			// check if element isn't already blocked before calling block() to avoid blinking overlay issues
 			// blockUI.isBlocked is either undefined or 0 when element is not blocked
 			if (
-				$( '#wc-stripe-express-checkout-element' ).data(
+				$('#wc-stripe-express-checkout-element').data(
 					'blockUI.isBlocked'
 				)
 			) {
 				return;
 			}
 
-			$( '#wc-stripe-express-checkout-element' ).block( {
+			$('#wc-stripe-express-checkout-element').block({
 				message: null,
-			} );
+			});
 		},
 
 		unblockExpressCheckoutButton: () => {
-			$( '#wc-stripe-express-checkout-element' ).unblock();
+			$('#wc-stripe-express-checkout-element').unblock();
 		},
 	};
 
 	// We don't need to initialize ECE on the checkout page now because it will be initialized by updated_checkout event.
 	if (
-		getExpressCheckoutData( 'is_product_page' ) ||
-		getExpressCheckoutData( 'is_pay_for_order' ) ||
-		getExpressCheckoutData( 'is_cart_page' )
+		getExpressCheckoutData('is_product_page') ||
+		getExpressCheckoutData('is_pay_for_order') ||
+		getExpressCheckoutData('is_cart_page')
 	) {
 		wcStripeECE.init();
 	}
 
 	// We need to refresh ECE data when total is updated.
-	$( document.body ).on( 'updated_cart_totals', () => {
+	$(document.body).on('updated_cart_totals', () => {
 		wcStripeECE.init();
-	} );
+	});
 
 	// We need to refresh ECE data when total is updated.
-	$( document.body ).on( 'updated_checkout', () => {
+	$(document.body).on('updated_checkout', () => {
 		wcStripeECE.init();
-	} );
-} );
+	});
+});

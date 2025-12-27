@@ -17,14 +17,14 @@ import {
 import 'wcstripe/express-checkout/compatibility/wc-order-attribution';
 import 'wcstripe/express-checkout/compatibility/wc-product-page';
 
-export const useExpressCheckout = ( {
+export const useExpressCheckout = ({
 	api,
 	billing,
 	shippingData,
 	onClick,
 	onClose,
 	setExpressPaymentError,
-} ) => {
+}) => {
 	const stripe = useStripe();
 	const elements = useElements();
 
@@ -35,37 +35,37 @@ export const useExpressCheckout = ( {
 		onClose();
 	};
 
-	const completePayment = ( redirectUrl ) => {
-		onCompletePaymentHandler( redirectUrl );
+	const completePayment = (redirectUrl) => {
+		onCompletePaymentHandler(redirectUrl);
 		window.location = redirectUrl;
 	};
 
-	const abortPayment = ( onConfirmEvent, message, isOrderError = false ) => {
-		if ( ! isOrderError ) {
-			onConfirmEvent.paymentFailed( { reason: 'fail' } );
+	const abortPayment = (onConfirmEvent, message, isOrderError = false) => {
+		if (!isOrderError) {
+			onConfirmEvent.paymentFailed({ reason: 'fail' });
 		}
 
 		// If we have a multiline message using newlines, replace them with <br>.
-		const formattedMessage = message.replace( /\n/g, '<br>' );
-		setExpressPaymentError( formattedMessage );
+		const formattedMessage = message.replace(/\n/g, '<br>');
+		setExpressPaymentError(formattedMessage);
 
-		onAbortPaymentHandler( onConfirmEvent, message );
+		onAbortPaymentHandler(onConfirmEvent, message);
 	};
 
 	const onButtonClick = useCallback(
-		async ( event ) => {
+		async (event) => {
 			const getShippingRates = () => {
 				// shippingData.shippingRates[ 0 ].shipping_rates will be non-empty
 				// only when the express checkout element's default shipping address
 				// has a shipping method defined in WooCommerce.
 				if (
-					shippingData?.shippingRates[ 0 ]?.shipping_rates?.length > 0
+					shippingData?.shippingRates[0]?.shipping_rates?.length > 0
 				) {
-					return shippingData.shippingRates[ 0 ].shipping_rates.map(
-						( r ) => {
+					return shippingData.shippingRates[0].shipping_rates.map(
+						(r) => {
 							return {
 								id: r.rate_id,
-								amount: parseInt( r.price, 10 ),
+								amount: parseInt(r.price, 10),
 								displayName: r.name,
 							};
 						}
@@ -78,12 +78,12 @@ export const useExpressCheckout = ( {
 					getExpressCheckoutData(
 						'checkout'
 					)?.default_shipping_option;
-				return defaultShippingOption ? [ defaultShippingOption ] : [];
+				return defaultShippingOption ? [defaultShippingOption] : [];
 			};
 
-			const lineItems = normalizeLineItems( billing.cartTotalItems );
+			const lineItems = normalizeLineItems(billing.cartTotalItems);
 			const totalAmountOfLineItems = lineItems.reduce(
-				( acc, lineItem ) => {
+				(acc, lineItem) => {
 					return acc + lineItem.amount;
 				},
 				0
@@ -102,30 +102,35 @@ export const useExpressCheckout = ( {
 				emailRequired: true,
 				shippingAddressRequired: shippingData?.needsShipping,
 				phoneNumberRequired:
-					getExpressCheckoutData( 'checkout' )?.needs_payer_phone ??
+					getExpressCheckoutData('checkout')?.needs_payer_phone ??
 					false,
-				...( shippingData?.needsShipping && {
+				...(shippingData?.needsShipping && {
 					shippingRates: getShippingRates(),
-				} ),
+				}),
 			};
 
 			// Click event from WC Blocks.
 			onClick();
 
-			if ( getExpressCheckoutData( 'taxes_based_on_billing' ) ) {
+			if (getExpressCheckoutData('taxes_based_on_billing')) {
 				displayExpressCheckoutNotice(
 					__(
 						'Final taxes charged can differ based on your actual billing address when using Express Checkout buttons (Link, Google Pay or Apple Pay).',
 						'woocommerce-gateway-stripe'
 					),
 					'info',
-					[ 'ece-taxes-info' ]
+					['ece-taxes-info']
 				);
 			}
 
 			// Global click event handler to ECE.
-			onClickHandler( event );
-			event.resolve( options );
+			onClickHandler(event);
+
+			const clickData = { type: 'blocks-express' };
+			console.log('Stripe Blocks Express Button Clicked:', clickData);
+			jQuery(document.body).trigger('wc_stripe_payment_button_click', clickData);
+
+			event.resolve(options);
 		},
 		[
 			onClick,
@@ -136,15 +141,15 @@ export const useExpressCheckout = ( {
 		]
 	);
 
-	const onConfirm = async ( event ) => {
-		return await onConfirmHandler( {
+	const onConfirm = async (event) => {
+		return await onConfirmHandler({
 			api,
 			stripe,
 			elements,
 			completePayment,
 			abortPayment,
 			event,
-		} );
+		});
 	};
 
 	return {
